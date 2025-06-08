@@ -1,0 +1,6 @@
+-  Basic Terminal Script
+	- [ ] Need to add a terminal command for dice roll. Currently the method for dice roll doesn't quite work. I needed to open a new terminal instance and do `random.randint(1,20)`. 
+	- [ ] Need to add a terminal command for ending the game based on the current decisions. Just prompt Gemini API with "Conclude game based on prior decisions in an interesting way. I need to leave."
+	- [ ] Need to connect the game to a database so that the game can be paused and continued whenever the player wants. There should be an option called pause and then the entire conversation would be automatically saved to a database. 
+	- [ ] Need to fix the logging. Even if the terminal runs out of display space the story should be easily exportable using the logs but they currently don't work as intended.
+	- [ ] There should be an option to export the overall story once the campaign ends as a PDF file. This would require reworking the parts which asked for choice and making them seamless with the next section and so on. This could be perfect for the long context prompt for Gemini. 
