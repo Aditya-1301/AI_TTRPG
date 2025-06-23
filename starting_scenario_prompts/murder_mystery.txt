@@ -1,0 +1,23 @@
+
+### **Murder Mystery Setting (Sherlock Holmes / Knives Out Universe)**
+
+**World Title:** *The Penhaligon Clockwork*
+
+**Core Concept:** A world steeped in the moody atmosphere of Victorian London, where the dawn of the industrial age clashes with ancient secrets, and every character is a cog in a machine of ambition, betrayal, and hidden history.
+
+**The World:**
+This is London, 1888. The air is thick with coal smoke and a persistent, chilling fog that muffles sound and shrouds the gaslit streets in mystery. It's a city of stark contrasts: the opulent mansions of Mayfair stand just miles from the squalid, crime-ridden alleys of Whitechapel. The marvels of the new age—analytical engines, pneumatic tubes, and early forensics—are on the rise, yet so is a fervent public interest in spiritualism, secret societies, and the occult. Scotland Yard is respected but often overwhelmed, creating a space for brilliant (and eccentric) consulting detectives to make their mark. Trust is a rare commodity, and every individual, from the highest lord to the lowest chimney sweep, seems to harbor a secret.
+
+**Key Regions & Landmarks for Scenario Generation:**
+*   **The Diogenes Club:** A real gentlemen's club from the Holmes canon, famous for its strict rule of silence. It serves as a neutral ground for information brokers, spies, and powerful figures to observe one another without speaking. A perfect place to shadow a suspect or receive a cryptic note.
+*   **The British Museum's Cursed Wing:** A new exhibit hall filled with recently acquired artifacts from Egypt, Mesopotamia, and other "heathen" lands. It is publicly celebrated but privately rumored by its staff to be cursed, with strange noises and disappearances attributed to the ancient relics.
+*   **The Rookeries of St. Giles:** A densely packed, labyrinthine slum, a maze of gin palaces, opium dens, and hidden workshops. It is a place where one can disappear entirely, hire muscle, or find a forger of impeccable (and illegal) skill.
+*   **The Royal Society of Inventors:** A prestigious institution where new patents for clockwork automatons, alchemical compounds, and electrical devices are demonstrated. It is a hotbed of professional jealousy, stolen ideas, and corporate espionage.
+
+**Factions & Tensions:**
+*   **Scotland Yard vs. Consulting Detectives:** There is a professional rivalry between the official, by-the-book police force and the unorthodox methods of private consultants. The Yard may see player characters as either a valuable asset or a public nuisance.
+*   **Science vs. Spiritualism:** The city's elite are divided. Many fund rational, scientific endeavors, while an equal number host séances and pour money into mediums and occultists, creating a deep ideological rift. A murder could easily have roots in either camp.
+*   **The Colonial Boom:** The British Empire is at its height, bringing immense wealth and exotic goods into London. This also brings foreign dignitaries, strange artifacts, and ancient grudges from colonized lands, creating a wellspring of potential motives.
+
+**Unique Phenomenon:**
+*   **The Fog:** London's fog is more than weather; it is a dynamic entity in any story. It can isolate locations, conceal assailants, muffle cries for help, and create an atmosphere of profound paranoia. The AI should use the shifting density of the fog as a key narrative tool.

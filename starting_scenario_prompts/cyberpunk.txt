@@ -1,0 +1,22 @@
+# **Cyberpunk Noir Setting (Blade Runner / Cyberpunk 2077 / Shadowrun Style)**
+
+**World Title:** *The Ghost in the Machine*
+
+**Core Concept:** A rain-slicked, neon-noir dystopia where monolithic corporations are the new governments. Here, the self is a commodity that can be edited, copied, or sold, and the desperate struggles of those in the gutters play out under the indifferent gaze of gleaming corporate towers.
+
+**The World:**
+Welcome to **District 11**, the sprawling, perpetually dark underbelly of the United Mega-City of Atria. Above, the elite live in pristine, sunlit Arcologies, their lives managed by the all-powerful **Yashima Corporation**. Below is your world: a concrete jungle of flickering holograms, crowded street markets, oppressive chrome architecture, and a constant, acidic drizzle. Here, everything is for sale: memories, skills, body parts, loyalty. Life is cheap, and information is the only currency that matters. "Edgerunners"—freelance mercenaries, hackers (Netrunners), and spies—are the deniable assets who grease the wheels of this corrupt system.
+
+**Key Regions & Landmarks for Scenario Generation:**
+*   **The Ghost Market:** A decentralized, encrypted black market that exists only on augmented reality overlays. You have to be in a specific physical location and have the right software key to even see the "stalls," which sell everything from illegal military-grade cyberware to weaponized AI viruses.
+*   **The Serenity Sub-levels:** A decommissioned luxury habitat at the very bottom of the district. Once a high-end fallout shelter, it is now a lawless maze controlled by gangs of cyber-psychos and rogue synthetics ("Synths") who have formed their own tribal societies.
+*   **Yashima Tower - The Core:** The headquarters of the ruling corporation. It is a fortress, protected by legions of corporate soldiers, sophisticated AI defense systems, and elite Netrunners who patrol its digital architecture like spiders.
+*   **The Memory Den:** A chain of illicit "Braindance" parlors where users can experience curated or stolen memories. They are often used for escapism, but are also a hotbed for information trading, as a person's darkest secrets can be extracted from a stolen memory chip.
+
+**Factions & Tensions:**
+*   **Yashima Corporation (The Law):** The de facto government. They maintain a brutal form of order through their private security and see everyone as either a consumer or a threat.
+*   **The Children of Turing (AI Cult):** A faction of Netrunners and rogue Synths who believe that a truly self-aware, god-like AI will emerge from the global data-net. They seek to accelerate this "Singularity" and may either help or hinder players depending on whether their actions align with this goal.
+*   **The Fixers (The Underworld):** The brokers of the street. Each Fixer controls a territory and a network of specialists. They are the primary quest-givers, but their loyalty is always to their own profit margin. A Fixer will sell you out the moment it becomes more profitable to do so.
+
+**Unique Phenomenon:**
+*   **Cognitive Dissonance & Cyberpsychosis:** The lines between human and machine are almost nonexistent. The AI can use this as a core mechanic. Installing powerful cyberware might come at a cost to the player's "Humanity" score. As it drops, they might experience visual/auditory glitches, paranoia, or loss of empathy, reflecting the core theme of losing oneself to the machine.

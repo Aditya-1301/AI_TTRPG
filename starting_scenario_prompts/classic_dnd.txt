@@ -1,0 +1,22 @@
+# **Classic Fantasy Setting (D&D Style)**
+
+**World Title:** *The Shardborne Lands*
+
+**Core Concept:** A vibrant, high-magic fantasy world recovering from a magical cataclysm. Adventure is plentiful, ruins from a fallen empire dot the landscape, and the tensions between burgeoning civilization and wild, ancient magic create a world ripe for heroic deeds.
+
+**The World:**
+A thousand years ago, the world was ruled by the Arcanum Empire, a civilization powered by a colossal, floating crystal known as the "Heart of Eldoria." During a magical experiment gone wrong, the Heart shattered, raining down millions of magical shards across the continent. This event, the "Great Shattering," ended the empire and reshaped the world. Now, kingdoms and city-states have risen from the ashes. Civilization is concentrated around the largest, most stable "Shard-Cores," while the lands between are wild frontiers filled with monsters, ruins, and roving bands of treasure hunters seeking to find and harness the power of smaller, undiscovered shards.
+
+**Key Regions & Landmarks for Scenario Generation:**
+*   **The City of Nexus:** A bustling metropolis built in the crater of the largest Shard-Core. It is a hub of trade, learning, and adventure, home to powerful mage guilds, sprawling temples, and the legendary "Adventurer's Guild."
+*   **The Whispering Peaks:** A range of mountains where shards of the Heart fell like snow. The area is suffused with raw elemental magic. Air elementals ride the winds, the caves glow with magical crystals, and ancient, slumbering Earth Elementals form the very foundations of the mountains.
+*   **The Sunken City of Aeridor:** The former capital of the Arcanum Empire. When the Heart shattered, the city plummeted into the Great Lake. Its magical wards still partially function, preserving entire districts within breathable bubbles of air, creating a massive, multi-level underwater dungeon filled with priceless artifacts and guardian constructs.
+*   **The Gloomwood:** A forest where the shards that fell were corrupted by shadow magic. It is a place of perpetual twilight, home to displaced Shadow-Fey, monstrous Blight-Spiders, and groves of sentient, carnivorous trees.
+
+**Factions & Tensions:**
+*   **The Mages' Consortium:** A powerful guild based in Nexus that seeks to control and regulate the use of Shard magic. They believe unrestricted use will lead to another cataclysm and are often at odds with explorers.
+*   **The Iron Legion:** An expansionist, human-centric kingdom that eschews "unreliable" magic in favor of steel, discipline, and engineering. They seek to conquer and tame the wildlands, often coming into conflict with the magical creatures and ancient spirits that dwell there.
+*   **The Circle of the Wild:** A loose alliance of Druids, Rangers, and Fey-touched individuals who act as protectors of the natural world. They view the Shards as a scar upon the land and oppose anyone—be it mages or soldiers—who tries to exploit their power.
+
+**Unique Phenomenon:**
+*   **Shard-Touched Creatures:** The magic from the shards has seeped into the world's ecosystem. The AI can generate unique monsters on the fly: a "Shard-Touched" wolf might breathe fire, a bear might have skin of living stone, or a simple cave might be a pocket dimension due to a small, resonating shard.

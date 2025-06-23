@@ -1,0 +1,22 @@
+# **Analog Horror Setting (Jurassic Park Universe)**
+
+**World Title:** *Project Chimera*
+
+**Core Concept:** A found-footage style survival horror experience set on a forgotten InGen island. The horror comes not from the dinosaurs themselves, but from the chilling, unnatural *wrongness* of the island's failed experiments and the psychological dread of being hunted by something intelligent.
+
+**The World:**
+The year is 1999. In the wake of the San Diego incident, InGen's dirty laundry is public, but the true extent of their hubris remains hidden. Deep in the Pacific lies **Isla Matanceros**, Site D, an island that was never meant for dinosaurs. It was the "bio-engineering and neural integration" facility, where Dr. Henry Wu was given free rein to push the boundaries of science, ethics, and nature. The island housed experiments in genetic splicing, animal-to-machine interfaces, and, most terrifyingly, intelligence amplification. A "containment failure" years ago led to the island being wiped from all official records, left to rot in absolute isolation.
+
+**Key Regions & Landmarks for Scenario Generation:**
+*   **The Behavioral Labs (The Maze):** A series of interconnected, reinforced concrete observation chambers designed like a rat's maze. The power is out, and the emergency lights cast long, distorted shadows. The walls are covered in desperate scratch marks, and strange, non-human symbols have been drawn in what looks like blood.
+*   **The Comms Tower:** The only point on the island high enough to potentially send a signal. It's surrounded by the nests of territorial Pteranodons, and the tower itself is old, rusted, and structurally unsound.
+*   **The Cryo-Storage Facility:** A subterranean complex where genetic samples were stored. The cooling systems have failed, leaving the corridors thick with a freezing fog and causing pipes to burst unpredictably. The real danger is what has thawed out and now uses the vents to move between floors.
+*   **The Primate House:** The most disturbing facility on the island. This is where InGen experimented with intelligence-amplified primates. The logs speak of them learning sign language, then developing their own, more complex version, before the final, panicked entry: "They are communicating with... something else. Something outside the walls."
+
+**Factions & Tensions:**
+*   There are no human factions. The only "tension" is **Predator vs. Prey.** The island's inhabitants have formed a twisted, unnatural ecosystem.
+    *   **The Raptors:** The classic, intelligent pack hunters, but on this island, they actively avoid certain areas, showing a clear fear of something else.
+    *   **The "Cleaners":** Heavily armored, ankylosaur-like herbivores that were engineered to be docile but have become hyper-aggressive, acting as territorial roadblocks.
+
+**Unique Phenomenon / The Primary Threat:**
+*   **Experiment 73A - "The Echoes":** The island's apex predator is not a T-Rex. It is a flock of small, deinonychus-like theropods engineered for pack-based problem-solving and vocal mimicry. They cannot copy speech perfectly, but they can flawlessly replicate sounds: a repeating beep from a motion tracker, the static crackle of a radio, the specific scream of a dying colleague, or the rhythmic clicking of a firearm's safety being disengaged. The AI should use sound as a weapon against the players. They'll hear a friendly radio click from the wrong direction, be lured into an ambush by a sound they think is safe, and be driven to paranoia by the constant, echoing sounds of the horrors that came before them. The true terror is when the players go quiet to listen, and the Echoes go quiet too.
