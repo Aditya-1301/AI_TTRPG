@@ -69,3 +69,4 @@ uv==0.7.12
 wcwidth==0.2.13
 websockets==15.0.1
 yarl==1.20.0
+supabase
