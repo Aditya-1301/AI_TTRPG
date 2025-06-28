@@ -3,3 +3,4 @@ venv
 logs
 untracked_files
 deprecated
+node_modules
