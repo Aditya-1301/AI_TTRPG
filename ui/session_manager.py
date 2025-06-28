@@ -5,18 +5,17 @@ from typing import List, Optional, Tuple
 import logging
 from dataclasses import dataclass
 from enum import Enum
-
-# Import from existing game logic
+import subprocess
 import sys
 import os
+
+# Import from existing game logic
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from game.game import supabase, logger
+from game.game import supabase, logger, create_new_session, load_session
 
 class ViewState(Enum):
     SESSIONS_LIST = "sessions_list"
     SESSION_DETAIL = "session_detail"
-    EDIT_PROMPT = "edit_prompt"
-    EDIT_RULES = "edit_rules"
 
 @dataclass
 class SessionData:
@@ -36,11 +35,8 @@ class TTRPGSessionManager:
         self.selected_session: Optional[SessionData] = None
         self.scroll_offset = 0
         self.max_display_items = 0
-        self.system_prompt = ""
-        self.rules_config = ""
-        self.edit_buffer = ""
-        self.cursor_pos = 0
-        self.edit_scroll = 0
+        self.status_message = ""
+        self.status_type = "info"
         
         # Initialize colors
         self.init_colors()
@@ -63,7 +59,7 @@ class TTRPGSessionManager:
         curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_WHITE) # Input fields
         
     def load_sessions(self):
-        """Load sessions from database"""
+        """Load sessions from database using existing game.py functions"""
         try:
             # Get sessions with message counts and last messages
             sessions_response = supabase.table('sessions').select('*').order('created_at', desc=True).execute()
@@ -71,11 +67,16 @@ class TTRPGSessionManager:
             self.sessions = []
             for session in sessions_response.data:
                 # Get message count and last message for each session
-                messages_response = supabase.table('messages').select('content, created_at').eq('session_id', session['id']).order('created_at', desc=True).limit(1).execute()
+                messages_response = supabase.table('messages').select('content, created_at, role').eq('session_id', session['id']).order('created_at', desc=True).limit(1).execute()
                 
                 last_message = ""
                 if messages_response.data:
-                    last_message = messages_response.data[0]['content'][:50] + "..." if len(messages_response.data[0]['content']) > 50 else messages_response.data[0]['content']
+                    msg = messages_response.data[0]
+                    # Show GM messages preferentially, or user messages if no GM messages
+                    if msg['role'] == 'model':
+                        last_message = f"GM: {msg['content'][:47]}..." if len(msg['content']) > 47 else f"GM: {msg['content']}"
+                    else:
+                        last_message = f"Player: {msg['content'][:44]}..." if len(msg['content']) > 44 else f"Player: {msg['content']}"
                 
                 count_response = supabase.table('messages').select('id', count='exact').eq('session_id', session['id']).execute()
                 message_count = count_response.count or 0
@@ -90,9 +91,17 @@ class TTRPGSessionManager:
                 )
                 self.sessions.append(session_data)
                 
+            self.set_status(f"Loaded {len(self.sessions)} sessions", "success")
+                
         except Exception as e:
             logger.error(f"Error loading sessions: {e}")
             self.sessions = []
+            self.set_status(f"Error loading sessions: {str(e)}", "error")
+    
+    def set_status(self, message: str, message_type: str = "info"):
+        """Set status message"""
+        self.status_message = message
+        self.status_type = message_type
     
     def draw_header(self):
         """Draw the main header"""
@@ -102,9 +111,15 @@ class TTRPGSessionManager:
         self.stdscr.addstr(0, 0, " " * width, curses.color_pair(1))
         
         # Title
-        title = "TTRPG Sessions Manager"
+        title = "🎲 TTRPG Sessions Manager"
         title_x = max(0, (width - len(title)) // 2)
-        self.stdscr.addstr(0, title_x, title, curses.color_pair(1) | curses.A_BOLD)
+        try:
+            self.stdscr.addstr(0, title_x, title, curses.color_pair(1) | curses.A_BOLD)
+        except curses.error:
+            # Fallback without emoji if terminal doesn't support it
+            title = "TTRPG Sessions Manager"
+            title_x = max(0, (width - len(title)) // 2)
+            self.stdscr.addstr(0, title_x, title, curses.color_pair(1) | curses.A_BOLD)
         
         # Session count and date
         session_count = f"Sessions: {len(self.sessions)}"
@@ -126,15 +141,18 @@ class TTRPGSessionManager:
         
         # Calculate display area
         start_y = 3
-        end_y = height - 3
-        self.max_display_items = end_y - start_y
+        end_y = height - 4  # Leave space for status and footer
+        self.max_display_items = (end_y - start_y) // 4  # Each session takes ~4 lines
         
         # Clear content area
         for y in range(start_y, end_y):
-            self.stdscr.addstr(y, 0, " " * width)
+            try:
+                self.stdscr.addstr(y, 0, " " * width)
+            except curses.error:
+                pass
         
         if not self.sessions:
-            no_sessions_msg = "No sessions found. Create a new session to get started."
+            no_sessions_msg = "No sessions found. Press 'N' to create a new session."
             msg_x = max(0, (width - len(no_sessions_msg)) // 2)
             self.stdscr.addstr(start_y + 2, msg_x, no_sessions_msg, curses.color_pair(4))
             return
@@ -152,7 +170,10 @@ class TTRPGSessionManager:
                 break
                 
             session = self.sessions[session_index]
-            y_pos = start_y + i
+            y_pos = start_y + (i * 4)
+            
+            if y_pos + 3 >= end_y:
+                break
             
             # Determine colors and attributes
             is_selected = session_index == self.selected_index
@@ -163,37 +184,48 @@ class TTRPGSessionManager:
             status_color = curses.color_pair(2) if session.is_active else curses.color_pair(3)
             
             if is_selected:
-                self.stdscr.addstr(y_pos, 0, " " * width, color_pair)
+                # Highlight entire session block
+                for line_offset in range(4):
+                    if y_pos + line_offset < end_y:
+                        try:
+                            self.stdscr.addstr(y_pos + line_offset, 0, " " * width, color_pair)
+                        except curses.error:
+                            pass
             
             # Draw session info
-            self.stdscr.addstr(y_pos, 2, status, status_color | curses.A_BOLD)
-            
-            # Campaign title (use UUID as title for now)
-            campaign_title = f"Campaign {session.session_uuid[:8]}"
-            self.stdscr.addstr(y_pos, 4, campaign_title, color_pair | curses.A_BOLD)
-            
-            # System and date info
-            system_info = f"System: D&D 5e"
-            date_str = session.created_at[:10] if session.created_at else "Unknown"
-            last_played = f"Last played: {date_str}"
-            
-            if y_pos + 1 < end_y:
+            try:
+                self.stdscr.addstr(y_pos, 2, status, status_color | curses.A_BOLD)
+                
+                # Campaign title (use UUID as title for now)
+                campaign_title = f"Campaign {session.session_uuid[:8]}"
+                self.stdscr.addstr(y_pos, 4, campaign_title, color_pair | curses.A_BOLD)
+                
+                # Message count
+                msg_count = f"({session.message_count} messages)"
+                count_x = min(width - len(msg_count) - 2, 4 + len(campaign_title) + 2)
+                self.stdscr.addstr(y_pos, count_x, msg_count, color_pair)
+                
+                # System and date info
+                system_info = "System: Gemini AI GM"
+                date_str = session.created_at[:10] if session.created_at else "Unknown"
+                last_played = f"Created: {date_str}"
+                
                 self.stdscr.addstr(y_pos + 1, 6, system_info, color_pair)
                 date_x = width - len(last_played) - 4
                 if date_x > len(system_info) + 10:
                     self.stdscr.addstr(y_pos + 1, date_x, last_played, color_pair)
-            
-            # Preview text
-            if session.last_message and y_pos + 2 < end_y:
-                preview = f'"{session.last_message}"'
-                if len(preview) > width - 8:
-                    preview = preview[:width - 11] + "..."
-                self.stdscr.addstr(y_pos + 2, 6, preview, color_pair)
-            
-            # Add spacing between sessions
-            if i < self.max_display_items - 1 and session_index < len(self.sessions) - 1:
-                if y_pos + 3 < end_y:
-                    self.stdscr.addstr(y_pos + 3, 0, " " * width)
+                
+                # Preview text
+                if session.last_message:
+                    preview = f'"{session.last_message}"'
+                    if len(preview) > width - 8:
+                        preview = preview[:width - 11] + "..."
+                    self.stdscr.addstr(y_pos + 2, 6, preview, color_pair)
+                else:
+                    self.stdscr.addstr(y_pos + 2, 6, '"No messages yet"', color_pair)
+                    
+            except curses.error:
+                pass
     
     def draw_session_detail(self):
         """Draw the session detail view"""
@@ -204,62 +236,97 @@ class TTRPGSessionManager:
         start_y = 3
         
         # Clear content area
-        for y in range(start_y, height - 3):
-            self.stdscr.addstr(y, 0, " " * width)
+        for y in range(start_y, height - 4):
+            try:
+                self.stdscr.addstr(y, 0, " " * width)
+            except curses.error:
+                pass
         
         # Campaign header
         campaign_title = f"Campaign {self.selected_session.session_uuid[:8]}"
         title_x = max(0, (width - len(campaign_title)) // 2)
-        self.stdscr.addstr(start_y, title_x, campaign_title, curses.color_pair(1) | curses.A_BOLD)
-        
-        # System and date info
-        system_info = "System: D&D 5e"
-        date_str = self.selected_session.created_at[:10] if self.selected_session.created_at else "Unknown"
-        last_played = f"Last played: {date_str}"
-        
-        info_line = f"{system_info} | {last_played}"
-        info_x = max(0, (width - len(info_line)) // 2)
-        self.stdscr.addstr(start_y + 1, info_x, info_line, curses.color_pair(3))
-        
-        # Configuration sections
-        current_y = start_y + 3
-        
-        # System Prompt section
-        self.stdscr.addstr(current_y, 2, "System Prompt Configuration:", curses.color_pair(1) | curses.A_BOLD)
-        current_y += 1
-        
-        # System prompt box
-        prompt_height = 8
-        for i in range(prompt_height):
-            if current_y + i < height - 3:
-                self.stdscr.addstr(current_y + i, 4, "│" + " " * (width - 8) + "│", curses.color_pair(7))
-        
-        # Add some sample text
-        sample_prompt = "You are an advanced AI Game Master for an immersive D&D campaign..."
-        wrapped_prompt = textwrap.wrap(sample_prompt, width - 10)
-        for i, line in enumerate(wrapped_prompt[:prompt_height-2]):
-            if current_y + i + 1 < height - 3:
-                self.stdscr.addstr(current_y + i + 1, 6, line, curses.color_pair(3))
-        
-        current_y += prompt_height + 1
-        
-        # Rules Configuration section
-        if current_y < height - 8:
-            self.stdscr.addstr(current_y, 2, "Game Rules Configuration:", curses.color_pair(1) | curses.A_BOLD)
+        try:
+            self.stdscr.addstr(start_y, title_x, campaign_title, curses.color_pair(1) | curses.A_BOLD)
+            
+            # System and date info
+            system_info = "System: Gemini AI GM"
+            date_str = self.selected_session.created_at[:10] if self.selected_session.created_at else "Unknown"
+            last_played = f"Created: {date_str} | Messages: {self.selected_session.message_count}"
+            
+            info_x = max(0, (width - len(last_played)) // 2)
+            self.stdscr.addstr(start_y + 1, info_x, last_played, curses.color_pair(3))
+            
+            # Session UUID
+            uuid_info = f"UUID: {self.selected_session.session_uuid}"
+            uuid_x = max(0, (width - len(uuid_info)) // 2)
+            self.stdscr.addstr(start_y + 2, uuid_x, uuid_info, curses.color_pair(4))
+            
+            # Action buttons
+            current_y = start_y + 5
+            
+            # Start/Resume Game button
+            if self.selected_session.is_active:
+                button_text = "[ Resume Game Session ]"
+                action_text = "Resume this campaign where you left off"
+            else:
+                button_text = "[ Start New Game Session ]"
+                action_text = "Begin a new adventure in this campaign"
+            
+            button_x = max(0, (width - len(button_text)) // 2)
+            self.stdscr.addstr(current_y, button_x, button_text, curses.color_pair(2) | curses.A_BOLD)
+            
+            action_x = max(0, (width - len(action_text)) // 2)
+            self.stdscr.addstr(current_y + 1, action_x, action_text, curses.color_pair(3))
+            
+            # Session info
+            current_y += 4
+            self.stdscr.addstr(current_y, 2, "Session Information:", curses.color_pair(1) | curses.A_BOLD)
             current_y += 1
             
-            # Rules box
-            rules_height = 6
-            for i in range(rules_height):
-                if current_y + i < height - 3:
-                    self.stdscr.addstr(current_y + i, 4, "│" + " " * (width - 8) + "│", curses.color_pair(7))
+            info_lines = [
+                f"• Session ID: {self.selected_session.id}",
+                f"• UUID: {self.selected_session.session_uuid}",
+                f"• Created: {self.selected_session.created_at}",
+                f"• Message Count: {self.selected_session.message_count}",
+                f"• Status: {'Active' if self.selected_session.is_active else 'Inactive'}"
+            ]
             
-            # Add sample rules
-            sample_rules = "Combat: Turn-based initiative system\nMagic: Standard D&D 5e spellcasting\nSkill Checks: D20 + modifier vs DC"
-            rules_lines = sample_rules.split('\n')
-            for i, line in enumerate(rules_lines[:rules_height-2]):
-                if current_y + i + 1 < height - 3:
-                    self.stdscr.addstr(current_y + i + 1, 6, line, curses.color_pair(3))
+            for line in info_lines:
+                if current_y < height - 6:
+                    self.stdscr.addstr(current_y, 4, line, curses.color_pair(3))
+                    current_y += 1
+                    
+        except curses.error:
+            pass
+    
+    def draw_status_bar(self):
+        """Draw status bar"""
+        height, width = self.stdscr.getmaxyx()
+        status_y = height - 3
+        
+        # Clear status line
+        try:
+            self.stdscr.addstr(status_y, 0, " " * width)
+            
+            if self.status_message:
+                # Choose color based on message type
+                if self.status_type == "error":
+                    color_pair = curses.color_pair(5)  # Red
+                elif self.status_type == "success":
+                    color_pair = curses.color_pair(2)  # Green
+                elif self.status_type == "warning":
+                    color_pair = curses.color_pair(4)  # Yellow
+                else:
+                    color_pair = curses.color_pair(3)  # Normal
+                
+                # Truncate message if too long
+                display_message = self.status_message
+                if len(display_message) > width - 4:
+                    display_message = display_message[:width - 7] + "..."
+                
+                self.stdscr.addstr(status_y, 2, display_message, color_pair)
+        except curses.error:
+            pass
     
     def draw_footer(self):
         """Draw the footer with navigation help"""
@@ -267,21 +334,24 @@ class TTRPGSessionManager:
         footer_y = height - 2
         
         # Clear footer
-        self.stdscr.addstr(footer_y, 0, " " * width, curses.color_pair(1))
-        self.stdscr.addstr(footer_y + 1, 0, " " * width, curses.color_pair(1))
-        
-        if self.current_view == ViewState.SESSIONS_LIST:
-            help_text = "↑↓: Navigate | Enter: Select | N: New Session | D: Delete | Q: Quit"
-            if self.sessions:
-                page_info = f"Page {self.scroll_offset // self.max_display_items + 1} of {(len(self.sessions) - 1) // self.max_display_items + 1}"
-                page_x = width - len(page_info) - 2
-                self.stdscr.addstr(footer_y + 1, page_x, page_info, curses.color_pair(3))
-        elif self.current_view == ViewState.SESSION_DETAIL:
-            help_text = "Tab: Switch fields | Enter: Start Game | Esc: Back | Ctrl+S: Save"
-        else:
-            help_text = "Esc: Back | Ctrl+S: Save"
-        
-        self.stdscr.addstr(footer_y, 2, help_text, curses.color_pair(3))
+        try:
+            self.stdscr.addstr(footer_y, 0, " " * width, curses.color_pair(1))
+            self.stdscr.addstr(footer_y + 1, 0, " " * width, curses.color_pair(1))
+            
+            if self.current_view == ViewState.SESSIONS_LIST:
+                help_text = "↑↓: Navigate | Enter: Select | N: New Session | D: Delete | R: Refresh | Q: Quit"
+                if self.sessions:
+                    total_pages = (len(self.sessions) - 1) // self.max_display_items + 1 if self.max_display_items > 0 else 1
+                    current_page = self.scroll_offset // self.max_display_items + 1 if self.max_display_items > 0 else 1
+                    page_info = f"Page {current_page} of {total_pages}"
+                    page_x = width - len(page_info) - 2
+                    self.stdscr.addstr(footer_y + 1, page_x, page_info, curses.color_pair(3))
+            elif self.current_view == ViewState.SESSION_DETAIL:
+                help_text = "Enter: Start/Resume Game | D: Delete Session | Esc: Back | Q: Quit"
+            
+            self.stdscr.addstr(footer_y, 2, help_text, curses.color_pair(3))
+        except curses.error:
+            pass
     
     def handle_sessions_list_input(self, key):
         """Handle input in sessions list view"""
@@ -299,6 +369,7 @@ class TTRPGSessionManager:
             self.delete_selected_session()
         elif key == ord('r') or key == ord('R'):
             self.load_sessions()  # Refresh
+            self.set_status("Sessions refreshed", "success")
     
     def handle_session_detail_input(self, key):
         """Handle input in session detail view"""
@@ -306,19 +377,24 @@ class TTRPGSessionManager:
             self.current_view = ViewState.SESSIONS_LIST
         elif key == ord('\n') or key == curses.KEY_ENTER:
             self.start_game_session()
-        elif key == 19:  # Ctrl+S
-            self.save_session_config()
+        elif key == ord('d') or key == ord('D'):
+            self.delete_current_session()
     
     def create_new_session(self):
-        """Create a new session"""
+        """Create a new session using existing game.py function"""
         try:
-            response = supabase.table('sessions').insert({}).execute()
-            if response.data:
+            self.set_status("Creating new session...", "info")
+            session_id, session_uuid = create_new_session()
+            if session_id and session_uuid:
                 self.load_sessions()  # Refresh the list
                 # Select the new session (it will be at the top due to ordering)
                 self.selected_index = 0
+                self.set_status(f"New session created: {session_uuid[:8]}", "success")
+            else:
+                self.set_status("Failed to create new session", "error")
         except Exception as e:
             logger.error(f"Error creating new session: {e}")
+            self.set_status(f"Error creating session: {str(e)}", "error")
     
     def delete_selected_session(self):
         """Delete the selected session"""
@@ -327,41 +403,126 @@ class TTRPGSessionManager:
             
         try:
             session = self.sessions[self.selected_index]
-            supabase.table('sessions').delete().eq('session_uuid', session.session_uuid).execute()
-            self.load_sessions()  # Refresh the list
+            # Simple confirmation - in a real implementation you might want a proper dialog
+            self.set_status(f"Press 'Y' to confirm deletion of session {session.session_uuid[:8]}", "warning")
+            self.stdscr.refresh()
             
-            # Adjust selected index if necessary
-            if self.selected_index >= len(self.sessions) and self.sessions:
-                self.selected_index = len(self.sessions) - 1
-            elif not self.sessions:
-                self.selected_index = 0
+            # Wait for confirmation
+            confirm_key = self.stdscr.getch()
+            if confirm_key == ord('y') or confirm_key == ord('Y'):
+                supabase.table('sessions').delete().eq('session_uuid', session.session_uuid).execute()
+                self.load_sessions()  # Refresh the list
+                
+                # Adjust selected index if necessary
+                if self.selected_index >= len(self.sessions) and self.sessions:
+                    self.selected_index = len(self.sessions) - 1
+                elif not self.sessions:
+                    self.selected_index = 0
+                
+                self.set_status(f"Session {session.session_uuid[:8]} deleted", "success")
+            else:
+                self.set_status("Deletion cancelled", "info")
                 
         except Exception as e:
             logger.error(f"Error deleting session: {e}")
+            self.set_status(f"Error deleting session: {str(e)}", "error")
+    
+    def delete_current_session(self):
+        """Delete the currently viewed session"""
+        if not self.selected_session:
+            return
+            
+        try:
+            # Simple confirmation
+            self.set_status(f"Press 'Y' to confirm deletion of session {self.selected_session.session_uuid[:8]}", "warning")
+            self.stdscr.refresh()
+            
+            # Wait for confirmation
+            confirm_key = self.stdscr.getch()
+            if confirm_key == ord('y') or confirm_key == ord('Y'):
+                supabase.table('sessions').delete().eq('session_uuid', self.selected_session.session_uuid).execute()
+                self.current_view = ViewState.SESSIONS_LIST
+                self.load_sessions()  # Refresh the list
+                
+                # Adjust selected index if necessary
+                if self.selected_index >= len(self.sessions) and self.sessions:
+                    self.selected_index = len(self.sessions) - 1
+                elif not self.sessions:
+                    self.selected_index = 0
+                
+                self.set_status(f"Session {self.selected_session.session_uuid[:8]} deleted", "success")
+                self.selected_session = None
+            else:
+                self.set_status("Deletion cancelled", "info")
+                
+        except Exception as e:
+            logger.error(f"Error deleting session: {e}")
+            self.set_status(f"Error deleting session: {str(e)}", "error")
     
     def start_game_session(self):
-        """Start the selected game session"""
-        if self.selected_session:
-            # This would integrate with your existing game.py main() function
-            # For now, we'll just show a message
+        """Start the selected game session using existing game.py"""
+        if not self.selected_session:
+            return
+            
+        try:
+            # End curses mode temporarily
             curses.endwin()
-            print(f"Starting game session: {self.selected_session.session_uuid}")
-            print("This would launch the game with the selected session...")
-            print("Press Enter to return to session manager...")
+            
+            # Get the path to the game script
+            game_script = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'game', 'game.py')
+            
+            print(f"\nLaunching game session: {self.selected_session.session_uuid}")
+            print("=" * 60)
+            
+            # Set environment variable for the session UUID
+            env = os.environ.copy()
+            env['TTRPG_RESUME_SESSION'] = self.selected_session.session_uuid
+            
+            # Run the game script
+            result = subprocess.run([
+                sys.executable, game_script
+            ], env=env, cwd=os.path.dirname(game_script))
+            
+            print("\n" + "=" * 60)
+            print("Game session ended. Press Enter to return to session manager...")
             input()
-            curses.doupdate()
-    
-    def save_session_config(self):
-        """Save session configuration"""
-        # This would save the system prompt and rules configuration
-        # Implementation depends on how you want to store this data
-        pass
+            
+            # Reinitialize curses
+            self.stdscr = curses.initscr()
+            curses.start_color()
+            curses.use_default_colors()
+            curses.noecho()
+            curses.cbreak()
+            self.stdscr.keypad(True)
+            curses.curs_set(0)
+            self.init_colors()
+            
+            # Refresh sessions in case anything changed
+            self.load_sessions()
+            self.set_status("Returned from game session", "success")
+            
+        except Exception as e:
+            logger.error(f"Error launching game: {e}")
+            self.set_status(f"Error launching game: {str(e)}", "error")
+            
+            # Make sure curses is reinitialized even if there's an error
+            try:
+                self.stdscr = curses.initscr()
+                curses.start_color()
+                curses.use_default_colors()
+                curses.noecho()
+                curses.cbreak()
+                self.stdscr.keypad(True)
+                curses.curs_set(0)
+                self.init_colors()
+            except:
+                pass
     
     def run(self):
         """Main UI loop"""
         self.stdscr.clear()
-        self.stdscr.nodelay(True)
-        self.stdscr.timeout(100)
+        self.stdscr.nodelay(False)  # Block on input
+        self.stdscr.timeout(-1)     # Wait indefinitely for input
         curses.curs_set(0)  # Hide cursor
         
         while True:
@@ -377,6 +538,7 @@ class TTRPGSessionManager:
                 elif self.current_view == ViewState.SESSION_DETAIL:
                     self.draw_session_detail()
                 
+                self.draw_status_bar()
                 self.draw_footer()
                 
                 # Refresh screen

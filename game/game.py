@@ -124,6 +124,9 @@ Available Commands:
 
 # --- Main Game Logic ---
 def main():
+    # Check for environment variable to auto-resume a session
+    auto_resume_uuid = os.getenv('TTRPG_RESUME_SESSION')
+    
     # Loop 1: The Restart Loop
     while True:
         client = setup_gemini_client()
@@ -131,49 +134,67 @@ def main():
         session_uuid = None
         conversation_history = []
         
-        # Loop 2: The Initialization Loop
-        print("\nWelcome to the AI TTRPG!")
-        print("Type '/new' to start, '/resume [uuid]' to continue, '/list' to see saved games, or '/help' for all commands.")
-        
-        while True:
-            initial_input = input("> ").strip()
-            if not initial_input: continue
-
-            cmd_parts = initial_input.lower().split(' ')
-            cmd = cmd_parts[0]
-
-            if cmd == '/new':
-                session_id, session_uuid = create_new_session()
-                if session_id:
-                    print(f"Started a new game. Your session UUID is: {session_uuid}")
-                    break
-            elif cmd == '/resume':
-                try:
-                    uuid_to_load = cmd_parts[1]
-                    loaded_id, loaded_uuid, loaded_history = load_session(uuid_to_load)
-                    if loaded_id:
-                        session_id, session_uuid, conversation_history = loaded_id, loaded_uuid, loaded_history
-                        if conversation_history and conversation_history[-1].role == "model":
-                            print("\n--- Session Resumed ---\nGM:")
-                            print(conversation_history[-1].parts[0].text)
-                        break
-                except IndexError:
-                    print("Usage: /resume [session_uuid]")
-            elif cmd == '/list':
-                response = supabase.table('sessions').select('session_uuid, created_at').execute()
-                if response.data:
-                    print("\n--- Saved Sessions ---")
-                    for s in response.data:
-                        print(f"UUID: {s['session_uuid']} (Created: {s['created_at']})")
-                else:
-                    print("No saved sessions found.")
-            elif cmd == '/help':
-                print_help()
-            elif cmd in ['/exit', '/pause']:
-                print("Exiting application.")
-                return
+        # If auto-resume is set, try to load that session
+        if auto_resume_uuid:
+            print(f"Auto-resuming session: {auto_resume_uuid}")
+            loaded_id, loaded_uuid, loaded_history = load_session(auto_resume_uuid)
+            if loaded_id:
+                session_id, session_uuid, conversation_history = loaded_id, loaded_uuid, loaded_history
+                if conversation_history and conversation_history[-1].role == "model":
+                    print("\n--- Session Resumed ---\nGM:")
+                    print(conversation_history[-1].parts[0].text)
+                # Clear the environment variable so it doesn't auto-resume again
+                if 'TTRPG_RESUME_SESSION' in os.environ:
+                    del os.environ['TTRPG_RESUME_SESSION']
+                auto_resume_uuid = None
             else:
-                print("Invalid command. Please type '/new', '/resume [uuid]', '/list', or '/help'.")
+                print(f"Failed to load session {auto_resume_uuid}. Starting normally.")
+                auto_resume_uuid = None
+        
+        # Loop 2: The Initialization Loop (only if not auto-resumed)
+        if not session_id:
+            print("\nWelcome to the AI TTRPG!")
+            print("Type '/new' to start, '/resume [uuid]' to continue, '/list' to see saved games, or '/help' for all commands.")
+            
+            while True:
+                initial_input = input("> ").strip()
+                if not initial_input: continue
+
+                cmd_parts = initial_input.lower().split(' ')
+                cmd = cmd_parts[0]
+
+                if cmd == '/new':
+                    session_id, session_uuid = create_new_session()
+                    if session_id:
+                        print(f"Started a new game. Your session UUID is: {session_uuid}")
+                        break
+                elif cmd == '/resume':
+                    try:
+                        uuid_to_load = cmd_parts[1]
+                        loaded_id, loaded_uuid, loaded_history = load_session(uuid_to_load)
+                        if loaded_id:
+                            session_id, session_uuid, conversation_history = loaded_id, loaded_uuid, loaded_history
+                            if conversation_history and conversation_history[-1].role == "model":
+                                print("\n--- Session Resumed ---\nGM:")
+                                print(conversation_history[-1].parts[0].text)
+                            break
+                    except IndexError:
+                        print("Usage: /resume [session_uuid]")
+                elif cmd == '/list':
+                    response = supabase.table('sessions').select('session_uuid, created_at').execute()
+                    if response.data:
+                        print("\n--- Saved Sessions ---")
+                        for s in response.data:
+                            print(f"UUID: {s['session_uuid']} (Created: {s['created_at']})")
+                    else:
+                        print("No saved sessions found.")
+                elif cmd == '/help':
+                    print_help()
+                elif cmd in ['/exit', '/pause']:
+                    print("Exiting application.")
+                    return
+                else:
+                    print("Invalid command. Please type '/new', '/resume [uuid]', '/list', or '/help'.")
         
         # --- Stage 2: Main Game Loop ---
         gm_persona_instruction = """
